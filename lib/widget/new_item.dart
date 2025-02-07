@@ -11,6 +11,12 @@ class NewItem extends StatefulWidget {
 }
 
 class _NewItemState extends State<NewItem> {
+  final _keyForm = GlobalKey<FormState>();
+
+  void _saveItem() {
+    _keyForm.currentState!.validate();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,12 +26,21 @@ class _NewItemState extends State<NewItem> {
       body: Padding(
         padding: EdgeInsets.all(12),
         child: Form(
+          key: _keyForm,
           child: Column(
             children: [
               TextFormField(
                 maxLength: 50,
                 decoration: InputDecoration(label: Text('Name')),
-                validator: (value) => 'test',
+                validator: (value) {
+                  if (value == null ||
+                      value.isEmpty ||
+                      value.trim().length <= 2 ||
+                      value.trim().length > 50) {
+                    return 'must be between 3 - 50 character';
+                  }
+                  return null;
+                },
               ),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -34,6 +49,16 @@ class _NewItemState extends State<NewItem> {
                     child: TextFormField(
                       decoration: InputDecoration(label: Text('Quantity')),
                       initialValue: '1',
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null ||
+                            value.isEmpty ||
+                            int.tryParse(value) == null ||
+                            int.tryParse(value)! < 0) {
+                          return 'must be valid positif number';
+                        }
+                        return null;
+                      },
                     ),
                   ),
                   SizedBox(width: 8),
@@ -65,8 +90,10 @@ class _NewItemState extends State<NewItem> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(onPressed: () {}, child: Text('Reset')),
-                  ElevatedButton(onPressed: () {}, child: Text('Submit'))
+                  TextButton(
+                      onPressed: () => _keyForm.currentState!.reset(),
+                      child: Text('Reset')),
+                  ElevatedButton(onPressed: _saveItem, child: Text('Submit'))
                 ],
               )
             ],
