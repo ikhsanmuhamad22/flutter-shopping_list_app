@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:shopping_list_app/data/categories.dart';
-import 'package:shopping_list_app/data/dummy_items.dart';
 import 'package:shopping_list_app/models/grocery_item.dart';
 import 'package:shopping_list_app/widget/new_item.dart';
 import 'package:http/http.dart' as http;
@@ -27,13 +26,19 @@ class _GroceriesListState extends State<GroceriesList> {
 
   void _loadData() async {
     final url = Uri.https(
-        'learning-28fcc-default-rtdbs.firebaseio.com', 'shooping_list.json');
+        'learning-28fcc-default-rtdb.firebaseio.com', 'shooping_list.json');
+    try {
     final response = await http.get(url);
     if (response.statusCode >= 400) {
       setState(() {
         _error = 'Failed to fetch data, Please try again latter';
       });
     }
+      if (response.body == 'null') {
+        return setState(() {
+          _isLoading = false;
+        });
+      }
     final Map<String, dynamic> listData = json.decode(response.body);
     final List<GroceryItem> laodedItems = [];
     for (final item in listData.entries) {
@@ -51,6 +56,11 @@ class _GroceriesListState extends State<GroceriesList> {
       _groceriesItem = laodedItems;
       _isLoading = false;
     });
+    } catch (err) {
+      setState(() {
+        _error = 'Something went wrong, Please try again latter';
+      });
+    }
   }
 
   void _addItem() async {
@@ -66,10 +76,19 @@ class _GroceriesListState extends State<GroceriesList> {
     });
   }
 
-  void removeItem(GroceryItem item) {
+  void removeItem(GroceryItem item) async {
+    final index = _groceriesItem.indexOf(item);
     setState(() {
       _groceriesItem.remove(item);
     });
+    final url = Uri.https('learning-28fcc-default-rtdb.firebaseio.com',
+        'shooping_list/${item.id}.json');
+    final response = await http.delete(url);
+    if (response.statusCode >= 400) {
+      setState(() {
+        _groceriesItem.insert(index, item);
+      });
+    }
   }
 
   @override
@@ -86,7 +105,7 @@ class _GroceriesListState extends State<GroceriesList> {
       );
     }
 
-    if (groceryItems.isNotEmpty && _isLoading == false) {
+    if (_groceriesItem.isNotEmpty && _isLoading == false) {
       content = ListView.builder(
         itemCount: _groceriesItem.length,
         itemBuilder: (context, index) => Dismissible(
@@ -105,7 +124,6 @@ class _GroceriesListState extends State<GroceriesList> {
     }
 
     if (_error != null) {
-      print(_error);
       content = Center(
           child: Text(
         _error!,
