@@ -20,20 +20,28 @@ class _NewItemState extends State<NewItem> {
   var _enterdQuantity = 1;
   var _selectedCategory = categories[Categories.vegetables]!;
 
-  void _saveItem() {
+  void _saveItem() async {
     if (_keyForm.currentState!.validate()) {
       final url = Uri.https(
           'learning-28fcc-default-rtdb.firebaseio.com', 'shooping_list.json');
       _keyForm.currentState!.save();
-      http.post(url,
+      final response = await http.post(url,
           headers: {'Content-Type': 'application/json'},
           body: json.encode({
             'name': _enteredName,
             'quantity': _enterdQuantity,
             'category': _selectedCategory.title
           }));
+
+      print(response.body);
+      print(response.statusCode);
+
+      if (!context.mounted) {
+        return;
+      }
+
+      Navigator.of(context).pop();
     }
-    // Navigator.of(context).pop<GroceryItem>();
   }
 
   @override
